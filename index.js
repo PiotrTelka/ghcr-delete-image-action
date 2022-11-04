@@ -11,7 +11,7 @@ async function run() {
     if (config.tag) {
       await actions.deleteByTag(config, octokit);
     } else if (config.untaggedAll) {
-      await actions.deleteUntaggedOrderGreaterThan(config, octokit);
+      await actions.deleteAllUntagged(config, octokit);
     }
   } catch (error) {
     core.setFailed(error.message);

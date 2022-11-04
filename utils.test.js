@@ -38,6 +38,7 @@ describe("getConfig", () => {
           token: "some-token",
           tag: "latest",
           untaggedAll: null,
+          isUser: false,
         });
       }
     );
@@ -85,9 +86,33 @@ describe("getConfig", () => {
                 token: "some-token",
                 tag: null,
                 untaggedAll: "true",
+                isUser: false,
               }
           );
         }
     );
   });
+
+
+    test("test is user cfg", () => {
+        withEnv(
+            {
+                ...sharedRequiredOpts,
+                "INPUT_UNTAGGED-ALL": "true",
+                "INPUT_IS-USER": "true"
+            },
+            () => {
+                expect(utils.getConfig()).toStrictEqual(
+                    {
+                        owner: "bots-house",
+                        name: "ghcr-delete-image-action",
+                        token: "some-token",
+                        tag: null,
+                        untaggedAll: "true",
+                        isUser: "true",
+                    }
+                );
+            }
+        );
+    });
 });

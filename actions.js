@@ -8,7 +8,8 @@ async function deleteByTag(config, octokit) {
     octokit,
     config.owner,
     config.name,
-    config.tag
+    config.tag,
+    config.isUser,
   );
 
   core.info(`🆔 package id is #${packageVersion.id}, delete it...`);
@@ -17,7 +18,8 @@ async function deleteByTag(config, octokit) {
     octokit,
     config.owner,
     config.name,
-    packageVersion.id
+    packageVersion.id,
+    config.isUser,
   );
 
   core.info(`✅ package #${packageVersion.id} deleted.`);
@@ -30,7 +32,8 @@ async function deleteAllUntagged(config, octokit) {
       octokit,
       config.owner,
       config.name,
-      0
+      0,
+      config.isUser,
   );
 
   core.startGroup(`🗑 delete ${pkgs.length} packages`);
@@ -40,7 +43,8 @@ async function deleteAllUntagged(config, octokit) {
         octokit,
         config.owner,
         config.name,
-        pkg.id
+        pkg.id,
+        config.isUser,
     );
 
     core.info(`✅ package #${pkg.id} deleted.`);

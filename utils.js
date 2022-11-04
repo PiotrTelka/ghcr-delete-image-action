@@ -9,9 +9,9 @@ let getConfig = function () {
     owner: core.getInput("owner", { required: true }),
     name: core.getInput("name", { required: true }),
     token: core.getInput("token", { required: true }),
-
     tag: core.getInput("tag") || null,
     untaggedAll: core.getInput("untagged-all") || null,
+    isUser: core.getInput("is-user") || false,
   };
 
   const definedOptionsCount = [
@@ -28,10 +28,10 @@ let getConfig = function () {
   return config;
 };
 
-let findPackageVersionByTag = async function (octokit, owner, name, tag) {
+let findPackageVersionByTag = async function (octokit, owner, name, tag, isUser) {
   const tags = new Set();
 
-  for await (const pkgVer of iteratePackageVersions(octokit, owner, name)) {
+  for await (const pkgVer of iteratePackageVersions(octokit, owner, name, isUser)) {
     const versionTags = pkgVer.metadata.container.tags;
 
     if (versionTags.includes(tag)) {
@@ -54,11 +54,12 @@ let findPackageVersionsUntaggedOrderGreaterThan = async function (
   octokit,
   owner,
   name,
-  n
+  n,
+  isUser
 ) {
   const pkgs = [];
 
-  for await (const pkgVer of iteratePackageVersions(octokit, owner, name)) {
+  for await (const pkgVer of iteratePackageVersions(octokit, owner, name, isUser)) {
     const versionTags = pkgVer.metadata.container.tags;
     if (versionTags.length === 0) {
       pkgs.push(pkgVer);
@@ -72,16 +73,24 @@ let findPackageVersionsUntaggedOrderGreaterThan = async function (
   return pkgs.slice(n);
 };
 
-let iteratePackageVersions = async function* (octokit, owner, name) {
+let iteratePackageVersions = async function* (octokit, owner, name, isUser) {
+  const dataUser = {
+    package_type: "container",
+    package_name: name,
+    username: owner,
+    per_page: 100,
+  }
+
+  const dataOrg = {
+    package_type: "container",
+    package_name: name,
+    org: owner,
+    per_page: 100,
+  }
+
   for await (const response of octokit.paginate.iterator(
-    octokit.rest.packages.getAllPackageVersionsForPackageOwnedByOrg,
-    {
-      package_type: "container",
-      package_name: name,
-      org: owner,
-      state: "active",
-      per_page: 100,
-    }
+    isUser ? octokit.rest.packages.getAllPackageVersionsForPackageOwnedByUser : octokit.rest.packages.getAllPackageVersionsForPackageOwnedByOrg,
+    isUser ? dataUser : dataOrg
   )) {
     for (let packageVersion of response.data) {
       yield packageVersion;
@@ -89,13 +98,27 @@ let iteratePackageVersions = async function* (octokit, owner, name) {
   }
 };
 
-let deletePackageVersion = async (octokit, owner, name, versionId) => {
+let deleteVersionsUser = async (octokit, owner, name, versionId) => {
+  await octokit.rest.packages.deletePackageVersionForUser({
+    package_type: "container",
+    package_name: name,
+    username: owner,
+    package_version_id: versionId,
+  });
+}
+
+let deleteVersionsOrg = async (octokit, owner, name, versionId) => {
   await octokit.rest.packages.deletePackageVersionForOrg({
     package_type: "container",
     package_name: name,
     org: owner,
     package_version_id: versionId,
   });
+}
+
+let deletePackageVersion = async (octokit, owner, name, versionId, isUser) => {
+  if (isUser) await deleteVersionsUser(octokit, owner, name, versionId)
+  else  await deleteVersionsOrg(octokit, owner, name, versionId)
 };
 
 module.exports = {

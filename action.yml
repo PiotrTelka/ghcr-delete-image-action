@@ -12,6 +12,11 @@ branding:
   color: blue
 
 inputs:
+  is-user:
+    description: >
+      Owner of the is user (not organization)
+    required: false
+
   owner:  
     description: >
       Owner of the package (user or organization)
