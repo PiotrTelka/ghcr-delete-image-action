@@ -10,7 +10,7 @@ async function run() {
 
     if (config.tag) {
       await actions.deleteByTag(config, octokit);
-    } else if (config.untaggedKeepLatest) {
+    } else if (config.untaggedAll) {
       await actions.deleteUntaggedOrderGreaterThan(config, octokit);
     }
   } catch (error) {

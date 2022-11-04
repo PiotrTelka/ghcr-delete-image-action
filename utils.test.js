@@ -1,5 +1,4 @@
 const utils = require("./utils");
-const github = require("@actions/github");
 
 let withEnv = (envs, cb) => {
   for (const k in envs) {
@@ -38,8 +37,7 @@ describe("getConfig", () => {
           name: "ghcr-delete-image-action",
           token: "some-token",
           tag: "latest",
-          untaggedKeepLatest: null,
-          untaggedOlderThan: null,
+          untaggedAll: null,
         });
       }
     );
@@ -62,8 +60,8 @@ describe("getConfig", () => {
     withEnv(
       {
         ...sharedRequiredOpts,
-        "INPUT_UNTAGGED-KEEP-LATEST": "2",
-        "INPUT_UNTAGGED-OLDER-THAN": "3",
+        "INPUT_TAG": "2",
+        "INPUT_UNTAGGED-ALL": "true",
       },
       () => {
         expect(() => utils.getConfig()).toThrow(
@@ -73,89 +71,23 @@ describe("getConfig", () => {
     );
   });
 
-  test("throw error if untagged keep latest is not number", () => {
+  test("ok when untagged all is passed", () => {
     withEnv(
-      {
-        ...sharedRequiredOpts,
-        "INPUT_UNTAGGED-KEEP-LATEST": "asdf",
-      },
-      () => {
-        expect(() => utils.getConfig()).toThrow(
-          "untagged-keep-latest is not number"
-        );
-      }
+        {
+          ...sharedRequiredOpts,
+          "INPUT_UNTAGGED-ALL": "true"
+        },
+        () => {
+          expect(utils.getConfig()).toStrictEqual(
+              {
+                owner: "bots-house",
+                name: "ghcr-delete-image-action",
+                token: "some-token",
+                tag: null,
+                untaggedAll: "true",
+              }
+          );
+        }
     );
   });
-
-  test("throw error if untagged older than is not number", () => {
-    withEnv(
-      {
-        ...sharedRequiredOpts,
-        "INPUT_UNTAGGED-OLDER-THAN": "asdf",
-      },
-      () => {
-        expect(() => utils.getConfig()).toThrow(
-          "untagged-older-than is not number"
-        );
-      }
-    );
-  });
-});
-
-describe("findPackageVersionByTag", () => {
-  const token = process.env["INTEGRATION_TEST_TOKEN"];
-  expect(token).toBeTruthy();
-
-  const octokit = github.getOctokit(token);
-
-  test("existing version returns object", async () => {
-    const packageVersion = await utils.findPackageVersionByTag(
-      octokit,
-      "bots-house",
-      "docker-telegram-bot-api",
-      "fbb8b4c-b21d667"
-    );
-    expect(packageVersion.id).toBe(266441);
-  }, 15000);
-
-  test("not existing version throw error", () => {
-    return expect(
-      utils.findPackageVersionByTag(
-        octokit,
-        "bots-house",
-        "docker-telegram-bot-api",
-        "test"
-      )
-    ).rejects.toThrow(new RegExp("package with tag"));
-  });
-});
-
-describe("findPackageVersionsUntaggedOrderGreaterThan", () => {
-  const token = process.env["INTEGRATION_TEST_TOKEN"];
-  expect(token).toBeTruthy();
-
-  const octokit = github.getOctokit(token);
-
-  test("returns greater than 5 objects", async () => {
-    const pkgs = await utils.findPackageVersionsUntaggedOrderGreaterThan(
-      octokit,
-      "bots-house",
-      "docker-telegram-bot-api",
-      2
-    );
-
-    expect(pkgs.length).toBeGreaterThanOrEqual(5);
-    // expect(packageVersion.id).toBe(266441);
-  }, 15000);
-
-  // test("not existing version throw error", () => {
-  //   return expect(
-  //     utils.findPackageVersionByTag(
-  //       octokit,
-  //       "bots-house",
-  //       "docker-telegram-bot-api",
-  //       "test"
-  //     )
-  //   ).rejects.toThrow(new RegExp("package with tag"));
-  // });
 });

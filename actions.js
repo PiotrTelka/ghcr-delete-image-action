@@ -23,30 +23,30 @@ async function deleteByTag(config, octokit) {
   core.info(`✅ package #${packageVersion.id} deleted.`);
 }
 
-async function deleteUntaggedOrderGreaterThan(config, octokit) {
-  core.info(`🔎 find not latest ${config.untaggedKeepLatest} packages...`);
+async function deleteAllUntagged(config, octokit) {
+  core.info(`🔎 get all untagged packages...`);
 
   const pkgs = await utils.findPackageVersionsUntaggedOrderGreaterThan(
-    octokit,
-    config.owner,
-    config.name,
-    config.untaggedKeepLatest
+      octokit,
+      config.owner,
+      config.name,
+      0
   );
 
   core.startGroup(`🗑 delete ${pkgs.length} packages`);
 
   for (const pkg of pkgs) {
     await utils.deletePackageVersion(
-      octokit,
-      config.owner,
-      config.name,
-      pkg.id
+        octokit,
+        config.owner,
+        config.name,
+        pkg.id
     );
 
     core.info(`✅ package #${pkg.id} deleted.`);
   }
 
-  core.endGroup();
+  core.info(`✅ All ${pkgs.length} packages deleted.`);
 }
 
-module.exports = { deleteByTag, deleteUntaggedOrderGreaterThan };
+module.exports = { deleteByTag, deleteAllUntagged };

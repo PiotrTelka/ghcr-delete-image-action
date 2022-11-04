@@ -10,38 +10,19 @@ let getConfig = function () {
     name: core.getInput("name", { required: true }),
     token: core.getInput("token", { required: true }),
 
-    // optional, mutual exclusive options
     tag: core.getInput("tag") || null,
-    untaggedKeepLatest: core.getInput("untagged-keep-latest") || null,
-    untaggedOlderThan: core.getInput("untagged-older-than") || null,
+    untaggedAll: core.getInput("untagged-all") || null,
   };
 
   const definedOptionsCount = [
     config.tag,
-    config.untaggedKeepLatest,
-    config.untaggedOlderThan,
+    config.untaggedAll,
   ].filter((x) => x !== null).length;
 
-  if (definedOptionsCount == 0) {
+  if (definedOptionsCount === 0) {
     throw new Error("no any required options defined");
   } else if (definedOptionsCount > 1) {
     throw new Error("too many selectors defined, use only one");
-  }
-
-  if (config.untaggedKeepLatest) {
-    if (
-      isNaN((config.untaggedKeepLatest = parseInt(config.untaggedKeepLatest)))
-    ) {
-      throw new Error("untagged-keep-latest is not number");
-    }
-  }
-
-  if (config.untaggedOlderThan) {
-    if (
-      isNaN((config.untaggedOlderThan = parseInt(config.untaggedOlderThan)))
-    ) {
-      throw new Error("untagged-older-than is not number");
-    }
   }
 
   return config;
@@ -79,7 +60,7 @@ let findPackageVersionsUntaggedOrderGreaterThan = async function (
 
   for await (const pkgVer of iteratePackageVersions(octokit, owner, name)) {
     const versionTags = pkgVer.metadata.container.tags;
-    if (versionTags.length == 0) {
+    if (versionTags.length === 0) {
       pkgs.push(pkgVer);
     }
   }
@@ -117,16 +98,9 @@ let deletePackageVersion = async (octokit, owner, name, versionId) => {
   });
 };
 
-function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
 module.exports = {
   getConfig,
   findPackageVersionByTag,
   deletePackageVersion,
   findPackageVersionsUntaggedOrderGreaterThan,
-  sleep,
 };
